@@ -22,6 +22,9 @@ fitness_gen=[]; % record the best fitness so far
 solution_gen=[];% record the best phenotype of each generation
 fitness_pop=[];% record the best fitness in current population
 
+popsize = 100;
+q = 10;
+
 pop = Initialization(popsize);
 fitness = Evaluation(pop, objective);
 
@@ -32,19 +35,26 @@ fitness_pop(1) = fitness(index);
 nbGen = nbGen + 1;
 nbEval = nbEval + popsize;
 
-function pop = Initialization(popsize)
-
+function pop = Initialization(popsize,lb,ub)
+    x = lb+(ub-lb)*rand([1,popsize]);
+    eta = rand([1,popsize]);
+    pop = [x;eta];
 end
 
 function fitness = Evaluation(pop, objective)
-
+    fitness = objective(pop(1,:));
 end
 
-function offspring = Crossover(parent1, parent2)
-
+function offspring = CreateNew(parent, n, lb, ub)
+    tau1 = 1/(sqrt(2*sqrt(n)));
+    tau2 = 1/sqrt(2*n);
+    x = parent(1,:) + parent(2,:).*randn(1,n);
+    x = boundData(x, lb, ub);
+    eta = parent(2,:).*exp(tau1*randn(1,n)+tau2*randn(1,n));
+    offspring = [x;eta];
 end
 
-function offspring = Mutation(offspring)
+function offspring = Comparison(pop, q)
 
 end
 
