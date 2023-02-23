@@ -1,5 +1,5 @@
 % bestx: the best solution found by your algorithm
-% recordedAvgY: array of  average fitnesses of each generation
+% recordedAvgY: array of average fitnesses of each generation
 % recordedBestY: array of best fitnesses of each generation
 function [bestx, recordedAvgY, recordedBestY]=EA(funcName,n,lb,ub,nbEvaluation)
 warning on MATLAB:divideByZero
@@ -15,51 +15,81 @@ eval(sprintf('objective=@%s;',funcName)); % Do not delete this line
 %% Initialization
 nbGen = 0; % generation counter
 nbEval = 0; % evaluation counter
-bestSoFarFit = 0; % best-so-far fitness value
-bestSoFarSolution = NaN; % best-so-far solution
-%recorders
-fitness_gen=[]; % record the best fitness so far
-solution_gen=[];% record the best phenotype of each generation
-fitness_pop=[];% record the best fitness in current population
-
 popsize = 100;
 q = 10;
+%recorders
+recordedAvgY = zeros(1, nbEvaluation/popsize); 
+recordedBestY = zeros(1, nbEvaluation/popsize);
 
-pop = Initialization(popsize);
-fitness = Evaluation(pop, objective);
+pop = Initialization(popsize, lb, ub, n);
+fitness = Evaluation(pop, objective, n);
 
-[~,index] = max(fitness);
-fitness_gen(1) = fitness(index);
-solution_gen(1) = bin2dec(pop(index,:));
-fitness_pop(1) = fitness(index);
+recordedAvgY(1) = mean(fitness);
+[recordedBestY(1),best_index] = min(fitness);
+bestx = pop(best_index,1:n);
 nbGen = nbGen + 1;
 nbEval = nbEval + popsize;
 
-function pop = Initialization(popsize,lb,ub)
-    x = lb+(ub-lb)*rand([1,popsize]);
-    eta = rand([1,popsize]);
-    pop = [x;eta];
+while nbEval < nbEvaluation
+    newpop = zeros(popsize, 2*n);
+    for pk = 1:popsize
+        newpop(pk,:) = CreateNew(pop(pk,:), n, lb, ub);
+    end
+
+    new_fitness = Evaluation(newpop, objective, n);
+    offspring = Selection([pop;newpop], q, popsize, [fitness,new_fitness]);
+    pop = offspring;
+    fitness = new_fitness;
+    
+    nbEval = nbEval + popsize;
+    nbGen = nbGen + 1;
+
+    temp_fitness = Evaluation(pop, objective, n);
+    recordedAvgY(nbGen) = mean(temp_fitness);
+    [temp_best, best_index] = min(temp_fitness);
+    if temp_best < recordedBestY(nbGen-1)
+        recordedBestY(nbGen) = temp_best;
+        bestx = pop(best_index,1:n);
+    else
+        recordedBestY(nbGen) = recordedBestY(nbGen-1);
+    end
+    
 end
 
-function fitness = Evaluation(pop, objective)
-    fitness = objective(pop(1,:));
+
 end
 
-function offspring = CreateNew(parent, n, lb, ub)
+function pop = Initialization(popsize,lb,ub,n)
+    x = lb+(ub-lb)*rand([popsize,n]);
+    eta = 3*ones([popsize,n]); % 初始值为3
+    pop = [x, eta];
+end
+
+function fitness = Evaluation(pop, objective, n)
+    popsize = size(pop,1);
+    fitness = zeros(1,popsize);
+    for k = 1:popsize
+        fitness(k) = objective(pop(k,1:n));
+    end
+end
+
+function child = CreateNew(parent, n, lb, ub)
     tau1 = 1/(sqrt(2*sqrt(n)));
     tau2 = 1/sqrt(2*n);
-    x = parent(1,:) + parent(2,:).*randn(1,n);
+    x = parent(1:n) + parent(n+1:end).*randn(1,n);
     x = boundData(x, lb, ub);
-    eta = parent(2,:).*exp(tau1*randn(1,n)+tau2*randn(1,n));
-    offspring = [x;eta];
+    normrand = randn;
+    eta = parent(n+1:end).*exp(tau2*normrand+tau1*randn(1,n));
+    child = [x,eta];
 end
 
-function offspring = Comparison(pop, q)
-
-end
-
-function newpop = Selection(offspring)
-
-end
-
+function newpop = Selection(pop, q, mu, fitness)
+    popsize = size(pop,1);
+    wins = zeros(1, popsize);
+    for k = 1:popsize
+        opponents = randperm(popsize,q);
+        wins(k) = sum(fitness(k)<=fitness(opponents)); % 最小化问题
+    end
+    [~, index] = sort(wins, 'descend');
+    newpop = pop(index(1:mu),:);
 end
