@@ -31,28 +31,25 @@ nbGen = nbGen + 1;
 nbEval = nbEval + popsize;
 
 while nbEval < nbEvaluation
-    newpop = zeros(popsize, 2*n);
-    for pk = 1:popsize
-        newpop(pk,:) = CreateNew(pop(pk,:), n, lb, ub);
-    end
+    newpop = CreateNew(pop, lb, ub, "FEP");
 
     new_fitness = Evaluation(newpop, objective, n);
-    offspring = Selection([pop;newpop], q, popsize, [fitness,new_fitness]);
-    pop = offspring;
-    fitness = new_fitness;
-    
     nbEval = nbEval + popsize;
     nbGen = nbGen + 1;
-
-    temp_fitness = Evaluation(pop, objective, n);
-    recordedAvgY(nbGen) = mean(temp_fitness);
-    [temp_best, best_index] = min(temp_fitness);
-    if temp_best < recordedBestY(nbGen-1)
-        recordedBestY(nbGen) = temp_best;
-        bestx = pop(best_index,1:n);
+    
+    temp_pop = [pop;newpop];
+    recordedAvgY(nbGen) = mean([fitness,new_fitness]);
+    [bestY, best_index] = min([fitness,new_fitness]);
+    if bestY < recordedBestY(nbGen-1)
+        recordedBestY(nbGen) = bestY;
+        bestx = temp_pop(best_index,1:n);
     else
         recordedBestY(nbGen) = recordedBestY(nbGen-1);
     end
+
+    offspring = Selection([pop;newpop], q, popsize, [fitness,new_fitness]);
+    pop = offspring;
+    fitness = new_fitness;
     
 end
 
@@ -73,15 +70,32 @@ function fitness = Evaluation(pop, objective, n)
     end
 end
 
-function child = CreateNew(parent, n, lb, ub)
+function newpop = CreateNew(parent, lb, ub, type)
+    popsize = size(parent,1);
+    n = size(parent,2)/2;
     tau1 = 1/(sqrt(2*sqrt(n)));
     tau2 = 1/sqrt(2*n);
-    x = parent(1:n) + parent(n+1:end).*randn(1,n);
+    GaussianRand  = repmat(randn(popsize,1),1,n);
+    GaussianRandj = randn(popsize,n);
+    if strcmp(type, "CEP")
+        x = parent(:,1:n) + parent(:,n+1:end).*rand(popsize,n);
+    else
+        x = parent(:,1:n) + parent(:,n+1:end).*trnd(1, popsize,n);
+    end
     x = boundData(x, lb, ub);
-    normrand = randn;
-    eta = parent(n+1:end).*exp(tau2*normrand+tau1*randn(1,n));
-    child = [x,eta];
+    eta = parent(:,n+1).*exp(tau1*GaussianRand+tau2*GaussianRandj);
+    newpop = [x, eta];
 end
+
+% function child = CreateNew(parent, n, lb, ub)
+%     tau1 = 1/(sqrt(2*sqrt(n)));
+%     tau2 = 1/sqrt(2*n);
+%     x = parent(1:n) + parent(n+1:end).*randn(1,n);
+%     x = boundData(x, lb, ub);
+%     normrand = randn;
+%     eta = parent(n+1:end).*exp(tau2*normrand+tau1*randn(1,n));
+%     child = [x,eta];
+% end
 
 function newpop = Selection(pop, q, mu, fitness)
     popsize = size(pop,1);
