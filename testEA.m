@@ -8,7 +8,7 @@ configurations
 
 numFunc=length(configuration.funcIndices);
 
-log="";
+log = "";
 
 % Loop over functions
 for funcIdx=configuration.funcIndices

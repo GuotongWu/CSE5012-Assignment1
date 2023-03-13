@@ -39,9 +39,9 @@ end
 
 d = 2;
 
-if length(xx)~=d
-    error('Error. \nInput must be of dimension %d. The dimension of current input is %d.', d, length(x));
-end
+% if length(xx)~=d
+%     error('Error. \nInput must be of dimension %d. The dimension of current input is %d.', d, length(x));
+% end
 if min(xx)<0
     error('Error. \n At least one element exceeds the lower bound.')
 end

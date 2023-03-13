@@ -4,3 +4,5 @@ testMe.m
 # EA.m
 res
 result
+*.mat
+*.asv

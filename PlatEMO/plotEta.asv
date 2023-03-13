@@ -1,0 +1,9 @@
+filePath = "./Data/AFEP/AFEP_ackley_M1_D30_1.mat";
+load(filePath, "result")
+etaVal = zeros(1, length(result));
+for i = 1:length(result)
+    etaVal(i) = mean(cat(1,result{i,2}.add), "all");
+end
+plot(1:100:100000, etaVal(1:2998), LineWidth=1.2)
+xlabel("Evaluation Number")
+ylabel("\eta")
